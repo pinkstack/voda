@@ -12,6 +12,7 @@ import akka.http.scaladsl.marshallers.xml.ScalaXmlSupport._
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.unmarshalling.{Unmarshal, Unmarshaller}
+import akka.stream.ThrottleMode
 import akka.stream.scaladsl._
 import com.pinkstack.voda.buildinfo.BuildInfo
 import com.typesafe.scalalogging.LazyLogging
@@ -117,9 +118,10 @@ object Main extends App with LazyLogging {
 
   import system.dispatcher
 
-  val r = Source.tick(3.seconds, 5.seconds, Model.Tick)
+  val r = Source.tick(0.seconds, 5.seconds, Model.Tick)
     .via(HidroPodatki.zadnji)
     .via(ToJson.flow)
+    .throttle(40, 200.millis, 60, ThrottleMode.Shaping)
     .runWith(Sink.foreach(println))
 
   r.onComplete {

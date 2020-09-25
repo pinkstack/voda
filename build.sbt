@@ -1,16 +1,35 @@
 import sbt.Keys.resolvers
+import com.typesafe.sbt.SbtNativePackager.autoImport._
+import com.typesafe.sbt.packager.docker.Cmd
+import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport._
 
 ThisBuild / scalaVersion := "2.13.3"
-ThisBuild / version := "0.1.0-SNAPSHOT"
+ThisBuild / version := "0.0.1"
 ThisBuild / organization := "com.pinkstack"
 ThisBuild / organizationName := "voda"
 
+lazy val dockerSettings = Seq(
+  dockerUsername := Some("pinkstack"),
+  dockerUpdateLatest := false,
+  dockerBaseImage := "azul/zulu-openjdk-alpine:11-jre",
+  dockerCommands := dockerCommands.value.flatMap {
+    case add@Cmd("RUN", args@_*) if args.contains("id") =>
+      List(
+        Cmd("RUN", "apk add --no-cache bash jq curl"),
+        Cmd("ENV", "SBT_VERSION", sbtVersion.value),
+        Cmd("ENV", "SCALA_VERSION", scalaVersion.value),
+        Cmd("ENV", "VODA_VERSION", version.value),
+        add
+      )
+    case other => List(other)
+  },
+  // Additional aliases
+  // dockerAliases ++= Seq(dockerAlias.value.withTag(Option("latest")))
+)
+
 lazy val root = (project in file("."))
-  .enablePlugins(BuildInfoPlugin).
-  settings(
-    buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
-    buildInfoPackage := "com.pinkstack.voda.buildinfo"
-  )
+  .enablePlugins(BuildInfoPlugin)
+  .enablePlugins(JavaServerAppPackaging, DockerPlugin, /*, JavaAgent, */ GitBranchPrompt)
   .settings(
     name := "Voda",
     libraryDependencies ++= (
@@ -20,8 +39,16 @@ lazy val root = (project in file("."))
         Dependencies.jsoup ++
         Dependencies.config ++
         Dependencies.testlibs
-      )
+      ),
+    Compile / mainClass := Some("com.pinkstack.voda.Main"),
   )
+  .settings(
+    buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
+    buildInfoPackage := "com.pinkstack.voda.buildinfo"
+  )
+  .enablePlugins(JavaAppPackaging)
+  .settings(assemblyJarName in assembly := "voda.jar")
+  .settings(dockerSettings: _*)
 
 ThisBuild / resolvers ++= Seq(
   Resolver.sonatypeRepo("releases"),
