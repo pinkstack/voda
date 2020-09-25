@@ -9,9 +9,13 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshallers.xml.ScalaXmlSupport
 import akka.http.scaladsl.marshallers.xml.ScalaXmlSupport._
+import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.unmarshalling.{Unmarshal, Unmarshaller}
 import akka.stream.scaladsl._
+import com.pinkstack.voda.buildinfo.BuildInfo
+import com.typesafe.scalalogging.LazyLogging
+import io.circe.Json
 
 import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
@@ -95,14 +99,27 @@ object HidroPodatki extends ScalaXmlSupport {
     flow(config.hidroPodatki.zadnjiURL)
 }
 
-object Main extends App {
+object ToJson {
+
+  import io.circe.generic.auto._, io.circe.syntax._
+
+  def flow(implicit system: ActorSystem) = {
+    Flow[Model.Postaja].map(_.asJson.noSpaces)
+  }
+}
+
+object Main extends App with LazyLogging {
   implicit val system: ActorSystem = ActorSystem("voda")
   implicit val config: Configuration.Config = Configuration.load
 
+  logger.info(s"Booting ${BuildInfo.name} version ${BuildInfo.version} with " +
+    s"Scala ${BuildInfo.scalaVersion} and SBT ${BuildInfo.sbtVersion}")
+
   import system.dispatcher
 
-  val r = Source.tick(0.seconds, 5.seconds, Model.Tick)
+  val r = Source.tick(3.seconds, 5.seconds, Model.Tick)
     .via(HidroPodatki.zadnji)
+    .via(ToJson.flow)
     .runWith(Sink.foreach(println))
 
   r.onComplete {
