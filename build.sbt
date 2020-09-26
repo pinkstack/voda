@@ -28,7 +28,7 @@ lazy val dockerSettings = Seq(
   },
   // Additional aliases
   dockerAliases ++= {
-    if (sys.env.get("CI").isEmpty)
+    if (!sys.env.contains("CI"))
       Seq(dockerAlias.value.withTag(Option("local")))
     else
       Seq(
@@ -60,7 +60,7 @@ lazy val dockerSettings = Seq(
 
 lazy val root = (project in file("."))
   .enablePlugins(BuildInfoPlugin)
-  .enablePlugins(JavaServerAppPackaging, DockerPlugin, /*, JavaAgent, */ GitBranchPrompt)
+  .enablePlugins(JavaServerAppPackaging, DockerPlugin, JavaAgent, GitBranchPrompt) // JavaAppPackaging)
   .settings(
     name := "Voda",
     libraryDependencies ++= (
