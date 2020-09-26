@@ -1,8 +1,8 @@
-# voda
+# voda 💦
 
 ![CI](https://github.com/pinkstack/voda/workflows/CI/badge.svg?branch=master)
 
-Experimenting with following [ARSO](http://www.arso.gov.si) sources,...
+Experimenting with following [ARSO](http://www.arso.gov.si) services and sources,...
 
 - [Hidrološki podatki - Dnevni v XML](http://www.arso.gov.si/xml/vode/hidro_podatki_dnevno_porocilo.xml)
 - [Hidrološki podatki - Zadnji v XML](http://www.arso.gov.si/xml/vode/hidro_podatki_zadnji.xml)
