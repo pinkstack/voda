@@ -36,10 +36,6 @@ jobs:
       - name: Compile and build Docker Image
         run: sbt compile docker:publishLocal
       - name: Push to GitHub Packages
-        uses: docker/build-push-action@v1
-        with:
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-          registry: docker.pkg.github.com
-          repository: pinkstack/voda/voda
-          tag_with_ref: true
+        run: |
+          docker tag pinkstack/voda docker.pkg.github.com/pinkstack/voda/voda && \
+          docker push docker.pkg.github.com/pinkstack/voda/voda
