@@ -14,6 +14,13 @@ $ docker pull ghcr.io/pinkstack/voda:latest
 $ docker run --rm ghcr.io/pinkstack/voda
 ```
 
+## Development from source
+
+```bash
+sbt compile assembly
+java -jar target/*/voda.jar
+```
+
 ## Author
 
 - [Oto Brglez](https://github.com/otobrglez)
