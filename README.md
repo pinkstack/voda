@@ -18,7 +18,7 @@ Experimenting with following [ARSO](http://www.arso.gov.si) services and Open-da
 ### Architecture (PoC)
 ![Voda - Architecture](public/Architecture Overview.png)
 
-
+# Deployment
 ## Usage with Docker
 
 ```bash
