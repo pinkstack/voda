@@ -32,11 +32,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: Login to Github Container Registry
+        run: docker login --username ${{ github.actor }} --password $(echo "${{ secrets.CR_PAT }}") ghcr.io
       - uses: olafurpg/setup-scala@v5
       #  with: openjdk@1.14
-      - name: Login to Github Container Registry
-        run: echo $CR_PAT | docker login ghcr.io -u otobrglez --password-stdin
-
       - name: Compile, build and publish Docker Image
         run: |
           sbt compile docker:publishLocal && \
