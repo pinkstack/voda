@@ -31,10 +31,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: olafurpg/setup-scala@v5
-        with: openjdk@1.14
+      #  with: openjdk@1.14
       - name: Compile, build and publish Docker Image
         run: |
           docker login -u ${GITHUB_ACTOR} -p ${{secrets.GITHUB_TOKEN}} docker.pkg.github.com && \
           sbt compile docker:publishLocal && \
-          docker tag pinkstack/voda docker.pkg.github.com/pinkstack/voda/voda && \
+          docker tag pinkstack/voda:latest docker.pkg.github.com/pinkstack/voda/voda && \
           docker push docker.pkg.github.com/pinkstack/voda/voda

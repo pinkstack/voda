@@ -24,7 +24,15 @@ lazy val dockerSettings = Seq(
     case other => List(other)
   },
   // Additional aliases
-  // dockerAliases ++= Seq(dockerAlias.value.withTag(Option("latest")))
+  dockerAliases ++= {
+    if (sys.env.get("CI").isEmpty)
+      Seq(dockerAlias.value.withTag(Option("local")))
+    else
+      Seq(
+        dockerAlias.value.withTag(Option("latest")),
+        dockerAlias.value.withTag(Option(version.value))
+      )
+  }
 )
 
 lazy val root = (project in file("."))
