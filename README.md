@@ -10,13 +10,13 @@ Experimenting with following [ARSO](http://www.arso.gov.si) services and Open-da
 
 ## Project
 ### Product Idea
-![Voda - Product Idea](public/Idea.png)
+![Voda - Product Idea](public/vreme/Idea.png)
 
 ### User Interface Idea
-![Voda - UI](public/UI.png)
+![Voda - UI](public/vreme/UI.png)
 
 ### Architecture (PoC)
-![Voda - Architecture](public/Architecture Overview.png)
+![Voda - Architecture](public/vreme/architecture_overview.png)
 
 # Deployment
 ## Usage with Docker
