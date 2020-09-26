@@ -4,7 +4,7 @@ import com.typesafe.sbt.packager.docker.Cmd
 import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport._
 
 ThisBuild / scalaVersion := "2.13.3"
-ThisBuild / version := "0.0.2"
+ThisBuild / version := "0.0.3"
 ThisBuild / organization := "com.pinkstack"
 ThisBuild / organizationName := "voda"
 
@@ -15,6 +15,7 @@ lazy val dockerSettings = Seq(
   dockerCommands := dockerCommands.value.flatMap {
     case add@Cmd("RUN", args@_*) if args.contains("id") =>
       List(
+        Cmd("LABEL", "org.opencontainers.image.source https://github.com/pinkstack/voda"),
         Cmd("RUN", "apk add --no-cache bash jq curl"),
         Cmd("ENV", "SBT_VERSION", sbtVersion.value),
         Cmd("ENV", "SCALA_VERSION", scalaVersion.value),
