@@ -15,6 +15,8 @@ lazy val dockerSettings = Seq(
   dockerCommands := dockerCommands.value.flatMap {
     case add@Cmd("RUN", args@_*) if args.contains("id") =>
       List(
+        Cmd("LABEL", "maintainer Oto Brglez <otobrglez@gmail.com>"),
+        Cmd("LABEL", "org.opencontainers.image.url https://github.com/pinkstack/voda"),
         Cmd("LABEL", "org.opencontainers.image.source https://github.com/pinkstack/voda"),
         Cmd("RUN", "apk add --no-cache bash jq curl"),
         Cmd("ENV", "SBT_VERSION", sbtVersion.value),
