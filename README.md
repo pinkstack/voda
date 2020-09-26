@@ -17,8 +17,8 @@ $ docker run --rm ghcr.io/pinkstack/voda
 ## Development from source
 
 ```bash
-sbt compile assembly
-java -jar target/*/voda.jar
+$ sbt compile assembly
+$ java -jar target/*/voda.jar
 ```
 
 ## Author
