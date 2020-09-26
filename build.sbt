@@ -29,6 +29,26 @@ lazy val dockerSettings = Seq(
       Seq(dockerAlias.value.withTag(Option("local")))
     else
       Seq(
+        dockerAlias.value.withRegistryHost(Option("ghcr.io"))
+          .withUsername(Option("pinkstack"))
+          .withName("voda")
+          .withTag(Option(version.value))
+        ,
+        dockerAlias.value.withRegistryHost(Option("ghcr.io"))
+          .withUsername(Option("pinkstack"))
+          .withName("voda")
+          .withTag(Option("latest"))
+        ,
+        dockerAlias.value.withRegistryHost(Option("docker.pkg.github.com"))
+          .withUsername(Option("pinkstack/voda"))
+          .withName("voda")
+          .withTag(Option("latest"))
+        ,
+        dockerAlias.value.withRegistryHost(Option("docker.pkg.github.com"))
+          .withUsername(Option("pinkstack/voda"))
+          .withName("voda")
+          .withTag(Option(version.value))
+        ,
         dockerAlias.value.withTag(Option("latest")),
         dockerAlias.value.withTag(Option(version.value))
       )

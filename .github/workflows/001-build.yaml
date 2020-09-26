@@ -33,11 +33,15 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Login to Github Container Registry
-        run: docker login --username ${{ github.actor }} --password $(echo "${{ secrets.CR_PAT }}") ghcr.io
+        run: |
+          docker login --username ${{ github.actor }} --password $(echo "${{ secrets.CR_PAT }}") ghcr.io && \
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login docker.pkg.github.com -u ${{ github.actor }} --password-stdin
+
       - uses: olafurpg/setup-scala@v5
       #  with: openjdk@1.14
+
       - name: Compile, build and publish Docker Image
         run: |
           sbt compile docker:publishLocal && \
-          docker tag pinkstack/voda:latest ghcr.io/pinkstack/voda && \
-          docker push ghcr.io/pinkstack/voda
+          docker push ghcr.io/pinkstack/voda && \
+          docker push docker.pkg.github.com/pinkstack/voda/voda
