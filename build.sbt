@@ -4,7 +4,7 @@ import com.typesafe.sbt.packager.docker.Cmd
 import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport._
 
 ThisBuild / scalaVersion := "2.13.3"
-ThisBuild / version := "0.0.1"
+ThisBuild / version := "0.0.2"
 ThisBuild / organization := "com.pinkstack"
 ThisBuild / organizationName := "voda"
 
