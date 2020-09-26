@@ -31,12 +31,12 @@ object HidroPodatki extends ScalaXmlSupport {
   implicit val urlToURI: URL => Uri = (url: URL) => Uri(url.toString)
 
   private[this] def flow(url: URL)
-                        (implicit system: ActorSystem, config: Configuration.Config): Flow[Tick, Postaja, NotUsed] = {
+                        (implicit system: ActorSystem, config: Configuration.Config): Flow[Tick, PostajaMeritevTrenutna, NotUsed] = {
     import system.dispatcher
 
-    val toPostajaSeq: NodeSeq => Seq[Postaja] = xml =>
+    val toPostajaSeq: NodeSeq => Seq[PostajaMeritevTrenutna] = xml =>
       (xml \\ "postaja").map { x =>
-        Postaja(
+        PostajaMeritevTrenutna(
           sifra = x \@ "sifra",
           geDolzina = (x \@ "ge_dolzina").toDouble,
           geSirina = (x \@ "ge_sirina").toDouble,
@@ -68,10 +68,10 @@ object HidroPodatki extends ScalaXmlSupport {
     }
   }
 
-  def dnevni(implicit system: ActorSystem, config: Configuration.Config): Flow[Tick, Postaja, NotUsed] =
+  def dnevni(implicit system: ActorSystem, config: Configuration.Config): Flow[Tick, PostajaMeritevTrenutna, NotUsed] =
     flow(config.hidroPodatki.dnevniURL)
 
-  def zadnji(implicit system: ActorSystem, config: Configuration.Config): Flow[Tick, Postaja, NotUsed] =
+  def zadnji(implicit system: ActorSystem, config: Configuration.Config): Flow[Tick, PostajaMeritevTrenutna, NotUsed] =
     flow(config.hidroPodatki.zadnjiURL)
 }
 
@@ -80,7 +80,7 @@ object ToJson {
   import io.circe.generic.auto._, io.circe.syntax._
 
   def flow(implicit system: ActorSystem) = {
-    Flow[Model.Postaja].map(_.asJson.noSpaces)
+    Flow[Model.PostajaMeritevTrenutna].map(_.asJson)
   }
 }
 

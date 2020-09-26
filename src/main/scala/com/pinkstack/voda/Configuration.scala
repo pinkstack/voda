@@ -8,9 +8,8 @@ import akka.http.scaladsl.model.Uri
 import pureconfig.ConfigReader.Result
 
 object Configuration {
-  case class HidroPodatki(zadnjiURL: URL,
-                          dnevniURL: URL,
-                          povArhivURL: URL)
+
+  case class HidroPodatki(zadnjiURL: URL, dnevniURL: URL, arhivURL: URL)
 
   case class Config(hidroPodatki: HidroPodatki)
 

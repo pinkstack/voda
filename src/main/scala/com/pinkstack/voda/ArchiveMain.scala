@@ -17,8 +17,8 @@ object VodaArchive {
     import system.dispatcher
 
     val r = HttpRequest(uri = config.hidroPodatki.dnevniURL)
-    Http().singleRequest(r).flatMap(r =>
-      r
+    Http().singleRequest(r).map(r =>
+      r.status.some
     )
   }
 }
