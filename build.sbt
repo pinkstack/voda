@@ -4,7 +4,7 @@ import com.typesafe.sbt.packager.docker.Cmd
 import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport._
 
 ThisBuild / scalaVersion := "2.13.3"
-ThisBuild / version := "0.0.4"
+ThisBuild / version := "0.0.8"
 ThisBuild / organization := "com.pinkstack"
 ThisBuild / organizationName := "voda"
 
@@ -12,6 +12,9 @@ lazy val dockerSettings = Seq(
   dockerUsername := Some("pinkstack"),
   dockerUpdateLatest := false,
   dockerBaseImage := "azul/zulu-openjdk-alpine:11-jre",
+  dockerRepository := Some("vodacr.azurecr.io"),
+  dockerExposedPorts := Seq(7070),
+  dockerExposedUdpPorts := Seq.empty[Int],
   dockerCommands := dockerCommands.value.flatMap {
     case add@Cmd("RUN", args@_*) if args.contains("id") =>
       List(
@@ -29,7 +32,12 @@ lazy val dockerSettings = Seq(
   // Additional aliases
   dockerAliases ++= {
     if (!sys.env.contains("CI"))
-      Seq(dockerAlias.value.withTag(Option("local")))
+      Seq(
+        dockerAlias.value.withRegistryHost(Option("vodacr.azurecr.io"))
+          .withUsername(Option("pinkstack"))
+          .withName("voda")
+          .withTag(Option(version.value)),
+        dockerAlias.value.withTag(Option("local")))
     else
       Seq(
         dockerAlias.value.withRegistryHost(Option("ghcr.io"))

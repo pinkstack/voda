@@ -85,6 +85,18 @@ object ToJson {
   }
 }
 
+object Liveness {
+  def route(implicit system: ActorSystem) = {
+    import akka.http.scaladsl.server.Directives._
+    import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
+    import io.circe.generic.auto._
+
+    pathSingleSlash {
+      get(complete(Map("status" -> "ok")))
+    }
+  }
+}
+
 object Main extends App with LazyLogging {
   implicit val system: ActorSystem = ActorSystem("voda")
   implicit val config: Configuration.Config = Configuration.load
@@ -94,6 +106,9 @@ object Main extends App with LazyLogging {
 
   import system.dispatcher
 
+  Http().newServerAt("0.0.0.0", 7070).bindFlow(Liveness.route)
+    .onComplete { _ => println("Server,...") }
+
   val r = Source.tick(0.seconds, 5.seconds, Model.Tick)
     .via(HidroPodatki.zadnji)
     //.via(ToJson.flow)
@@ -101,7 +116,8 @@ object Main extends App with LazyLogging {
     .runWith(Sink.foreach(println))
 
   r.onComplete {
-    case Success(_) =>
+    case Success(r) =>
+      println(s"Stream completed with ${r}")
       system.terminate()
     case Failure(exception) =>
       System.err.println("💥" * 10)
