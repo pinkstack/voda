@@ -33,7 +33,7 @@ jobs:
       - uses: olafurpg/setup-scala@v5
       #  with: openjdk@1.14
       - name: Login
-        run: echo ${{ secrets.CR_PAT }} | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
+        run: docker login https://ghcr.io -u token --password-stdin <<< ${{ secrets.GHCR_TOKEN }}
       - name: Compile, build and publish Docker Image
         run: |
           sbt compile docker:publishLocal && \
