@@ -24,6 +24,8 @@ on: [ push ]
 #           java-version: 1.8
 #       - name: Build with Gradle
 #         run: ./gradlew build
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
   build_and_publish:
@@ -32,8 +34,9 @@ jobs:
       - uses: actions/checkout@v2
       - uses: olafurpg/setup-scala@v5
       #  with: openjdk@1.14
-      - name: Login
-        run: docker login https://ghcr.io -u token --password-stdin <<< ${{ secrets.GHCR_TOKEN }}
+      - name: Login to Github Container Registry
+        run: echo $CR_PAT | docker login ghcr.io -u otobrglez --password-stdin
+
       - name: Compile, build and publish Docker Image
         run: |
           sbt compile docker:publishLocal && \
