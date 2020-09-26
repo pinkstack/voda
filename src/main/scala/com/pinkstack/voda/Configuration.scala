@@ -11,7 +11,7 @@ object Configuration {
 
   case class HidroPodatki(zadnjiURL: URL, dnevniURL: URL, arhivURL: URL)
 
-  case class Config(hidroPodatki: HidroPodatki)
+  case class Config(hidroPodatki: HidroPodatki, stations: scala.collection.immutable.Map[String, Model.Postaja])
 
   final def load: Config = ConfigSource.default.at("voda").loadOrThrow[Config]
 }

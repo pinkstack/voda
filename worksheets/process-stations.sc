@@ -10,9 +10,10 @@ import scala.xml._
 // Read and process
 val exampleFile = XML.loadFile("hacking/hidro_podatki_zadnji.xml")
 val content: Seq[String] = (exampleFile \\ "postaja").toList.map { n =>
-  val (sifra, reka, merilnoMesto, geDolzina, geSirina, imeKratko) = (
+  val (sifra, reka, merilnoMesto, geDolzina, geSirina, imeKratko, kota) = (
     n \@ "sifra", (n \ "reka").text, (n \ "merilno_mesto").text,
-    n \@ "ge_dolzina", n \@ "ge_sirina", (n \ "ime_kratko").text
+    n \@ "ge_dolzina", n \@ "ge_sirina", (n \ "ime_kratko").text,
+    (n \@ "kota_0").toDoubleOption
   )
 
   s"""
@@ -23,6 +24,7 @@ val content: Seq[String] = (exampleFile \\ "postaja").toList.map { n =>
      |  ime-kratko = "${imeKratko}"
      |  ge-sirina = ${geSirina}
      |  ge-dolzina = ${geDolzina}
+     |  kota = ${kota.getOrElse("null")}
      | }""".stripMargin
 }
 
@@ -32,7 +34,7 @@ val template: String => String = { middle =>
      |# To re-generate run "worksheets/process-stations.sc"
      |# Otherwise don't touch it.
      |
-     |voda.stations {${middle}""".stripMargin
+     |voda.stations = {${middle}}""".stripMargin
 }
 val outputConfiguration: String = template(content.mkString("\n"))
 

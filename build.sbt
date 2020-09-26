@@ -81,9 +81,11 @@ lazy val root = (project in file("."))
   .settings(assemblyJarName in assembly := "voda.jar")
   .settings(dockerSettings: _*)
 
+
 ThisBuild / resolvers ++= Seq(
   Resolver.sonatypeRepo("releases"),
-  Resolver.sonatypeRepo("snapshots")
+  Resolver.sonatypeRepo("snapshots"),
+  Resolver.bintrayRepo("zamblauskas", "maven")
 )
 
 ThisBuild / scalacOptions ++= Seq(

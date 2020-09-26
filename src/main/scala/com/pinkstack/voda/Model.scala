@@ -1,5 +1,7 @@
 package com.pinkstack.voda
 
+import java.time.{LocalDate, LocalDateTime}
+
 object Model {
 
   sealed trait Tick
@@ -11,8 +13,9 @@ object Model {
   type MerilnoMesto = String
   type GeDolzina = Double
   type GeSirina = Double
+  type Kota = Double
 
-  sealed trait IPostaja {
+  sealed trait IPostaja extends Product with Serializable {
     def sifra: Sifra
 
     def merilnoMesto: MerilnoMesto
@@ -24,6 +27,8 @@ object Model {
     def geDolzina: GeDolzina
 
     def geSirina: GeSirina
+
+    def kota: Option[Kota]
   }
 
   sealed trait Meritev {
@@ -40,8 +45,8 @@ object Model {
                                     imeKratko: String,
                                     geDolzina: GeDolzina,
                                     geSirina: GeSirina,
-                                    kotaZero: Option[Double] = None,
-                                    datum: String,
+                                    kota: Option[Kota] = None,
+                                    datum: LocalDateTime,
                                     vodostaj: Option[Double] = None,
                                     pretok: Option[Double] = None,
                                     pretokZnacilni: Option[String] = None,
@@ -57,17 +62,21 @@ object Model {
                                        merilnoMesto: MerilnoMesto,
                                        reka: Reka,
                                        imeKratko: String,
-                                       datum: String,
+                                       geDolzina: GeDolzina,
+                                       geSirina: GeSirina,
+                                       kota: Option[Kota] = None,
+                                       datum: LocalDate,
                                        vodostaj: Option[Double] = None,
                                        pretok: Option[Double] = None,
-                                       tempVode: Option[Double] = None,
-                                      ) extends IPostaja with Meritev
+                                       tempVode: Option[Double] = None
+                                      ) extends IPostaja with Meritev with Location
 
   case class Postaja(sifra: Sifra,
                      merilnoMesto: MerilnoMesto,
                      reka: Reka,
                      imeKratko: String,
                      geDolzina: Double,
-                     geSirina: Double) extends IPostaja with Location
+                     geSirina: Double,
+                     kota: Option[Kota] = None) extends IPostaja with Location
 
 }

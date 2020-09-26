@@ -20,11 +20,20 @@ object Dependencies {
   )
 
   lazy val akka: Seq[sbt.ModuleID] = Seq[ModuleID](
+    // Akka
     "com.typesafe.akka" %% "akka-actor" % "2.6.8",
     "com.typesafe.akka" %% "akka-stream" % "2.6.8",
 
     "com.typesafe.akka" %% "akka-http" % "10.2.0",
-    "com.typesafe.akka" %% "akka-http-xml" % "10.2.0"
+    "com.typesafe.akka" %% "akka-http-xml" % "10.2.0",
+
+    // Alpakka (+integration)
+    "com.lightbend.akka" %% "akka-stream-alpakka-csv" % "2.0.2",
+    "com.github.tototoshi" %% "scala-csv" % "1.3.6",
+
+    "com.nrinaudo" %% "kantan.csv" % "0.6.1",
+    "com.nrinaudo" %% "kantan.csv-java8" % "0.6.1",
+    "com.nrinaudo" %% "kantan.csv-cats" % "0.6.1"
   )
 
   lazy val logging = Seq(
