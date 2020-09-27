@@ -78,3 +78,7 @@ $ java -jar target/*/voda.jar
 ## Author
 
 - [Oto Brglez](https://github.com/otobrglez)
+
+## License
+
+`MIT`
