@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: voda-archive
+spec:
+  containers:
+    - name: voda-archive
+      image: vodacr.azurecr.io/pinkstack/voda:0.1.0
+      imagePullPolicy: Always
+      args: [ "--archive" ]
+      envFrom:
+        - configMapRef:
+            name: voda-config
+  restartPolicy: Never
+  imagePullSecrets:
+    - name: acr-secret
+---

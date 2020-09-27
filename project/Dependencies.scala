@@ -23,17 +23,26 @@ object Dependencies {
     // Akka
     "com.typesafe.akka" %% "akka-actor" % "2.6.8",
     "com.typesafe.akka" %% "akka-stream" % "2.6.8",
+    "io.confluent" % "kafka-avro-serializer" % "5.4.1",
+    "io.confluent" % "kafka-streams-avro-serde" % "5.4.1",
 
     "com.typesafe.akka" %% "akka-http" % "10.2.0",
     "com.typesafe.akka" %% "akka-http-xml" % "10.2.0",
 
     // Alpakka (+integration)
     "com.lightbend.akka" %% "akka-stream-alpakka-csv" % "2.0.2",
+    "com.typesafe.akka" %% "akka-stream-kafka" % "2.0.5",
     "com.github.tototoshi" %% "scala-csv" % "1.3.6",
 
     "com.nrinaudo" %% "kantan.csv" % "0.6.1",
     "com.nrinaudo" %% "kantan.csv-java8" % "0.6.1",
     "com.nrinaudo" %% "kantan.csv-cats" % "0.6.1"
+  )
+
+  lazy val azure: Seq[sbt.ModuleID] = Seq[ModuleID](
+    "com.azure" % "azure-messaging-eventhubs" % "5.2.0",
+    "com.microsoft.azure" % "azure-eventhubs-eph" % "3.2.0",
+    "com.azure" % "azure-messaging-eventhubs-checkpointstore-blob" % "1.2.0"
   )
 
   lazy val logging = Seq(

@@ -4,7 +4,7 @@ import com.typesafe.sbt.packager.docker.Cmd
 import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport._
 
 ThisBuild / scalaVersion := "2.13.3"
-ThisBuild / version := "0.0.8"
+ThisBuild / version := "0.1.1"
 ThisBuild / organization := "com.pinkstack"
 ThisBuild / organizationName := "voda"
 
@@ -77,9 +77,10 @@ lazy val root = (project in file("."))
         Dependencies.logging ++
         Dependencies.jsoup ++
         Dependencies.config ++
+        Dependencies.azure ++
         Dependencies.testlibs
       ),
-    Compile / mainClass := Some("com.pinkstack.voda.Main"),
+    Compile / mainClass := Some("com.pinkstack.voda.Boot"),
   )
   .settings(
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
@@ -93,7 +94,10 @@ lazy val root = (project in file("."))
 ThisBuild / resolvers ++= Seq(
   Resolver.sonatypeRepo("releases"),
   Resolver.sonatypeRepo("snapshots"),
-  Resolver.bintrayRepo("zamblauskas", "maven")
+  Resolver.bintrayRepo("zamblauskas", "maven"),
+  Resolver.bintrayRepo("ovotech", "maven"),
+  "Confluent Maven Repository" at "https://packages.confluent.io/maven/",
+  "jitpack" at "https://jitpack.io"
 )
 
 ThisBuild / scalacOptions ++= Seq(

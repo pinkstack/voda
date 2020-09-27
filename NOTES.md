@@ -59,10 +59,16 @@ kubectl create secret docker-registry acr-secret `
   --docker-password=eBFXiJZ4n=XBe/GrZHLuesCTN0cHSmdg
   
 kubectl create secret docker-registry acr-secret \
-  --docker-server==vodacr.azurecr.io \
+  --docker-server=vodacr.azurecr.io \
   --docker-username=vodacr \
   --docker-password="eBFXiJZ4n=XBe/GrZHLuesCTN0cHSmdg"
+
   
-  
-vodacr.azurecr.io/pinkstack/voda:0.0.6            
-vodacr.azurecr.io/pinkstack/voda:0.0.6││     Image ID:                                                                                                                                                                                    │
+### Deploy dlow
+
+kubectl apply -f k8s/set-keys.yaml
+sbt docker:publish
+helm upgrade one chart/voda -f chart/voda/values.yaml --set image.tag=0.1.0
+
+# Run archive task
+kubectl apply -f k8s/start-archive-collection.yaml

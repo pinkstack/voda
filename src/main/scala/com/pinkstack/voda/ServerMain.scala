@@ -21,7 +21,7 @@ object ServerMain extends LazyLogging {
     val f = Http().newServerAt("0.0.0.0", 7070).bindFlow(route)
 
     StdIn.readLine("Hit ENTER to exit")
-    f.flatMap(_.unbind()).onComplete(_ => system.terminate)
+    f.flatMap(_.unbind()).onComplete { _ => system.terminate() }
   }
 
   private def route(implicit actorSystem: ActorSystem, config: Config) = {

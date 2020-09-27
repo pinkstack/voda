@@ -10,9 +10,9 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshallers.xml.ScalaXmlSupport
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.stream.ThrottleMode
 import akka.stream.scaladsl._
 import cats.implicits._
+import com.azure.messaging.eventhubs._
 import com.pinkstack.voda.buildinfo.BuildInfo
 import com.typesafe.scalalogging.LazyLogging
 
@@ -75,21 +75,11 @@ object HidroPodatki extends ScalaXmlSupport {
     flow(config.hidroPodatki.zadnjiURL)
 }
 
-object ToJson {
-
-  import io.circe.generic.auto._
-  import io.circe.syntax._
-
-  def flow(implicit system: ActorSystem) = {
-    Flow[Model.PostajaMeritevTrenutna].map(_.asJson)
-  }
-}
 
 object Liveness {
   def route(implicit system: ActorSystem) = {
     import akka.http.scaladsl.server.Directives._
     import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
-    import io.circe.generic.auto._
 
     pathSingleSlash {
       get(complete(Map("status" -> "ok")))
@@ -97,31 +87,58 @@ object Liveness {
   }
 }
 
-object Main extends App with LazyLogging {
-  implicit val system: ActorSystem = ActorSystem("voda")
-  implicit val config: Configuration.Config = Configuration.load
+object FetchMain extends LazyLogging {
 
-  logger.info(s"Booting ${BuildInfo.name} version ${BuildInfo.version} with " +
-    s"Scala ${BuildInfo.scalaVersion} and SBT ${BuildInfo.sbtVersion}")
+  import scala.jdk.CollectionConverters._
+  import io.circe.generic.auto._, io.circe.syntax._
 
-  import system.dispatcher
 
-  Http().newServerAt("0.0.0.0", 7070).bindFlow(Liveness.route)
-    .onComplete { _ => println("Server,...") }
+  def main(args: Array[String] = Array.empty): Unit = {
+    implicit val system: ActorSystem = ActorSystem("voda")
+    implicit val config: Configuration.Config = Configuration.load
 
-  val r = Source.tick(0.seconds, 5.seconds, Model.Tick)
-    .via(HidroPodatki.zadnji)
-    //.via(ToJson.flow)
-    .throttle(40, 200.millis, 60, ThrottleMode.Shaping)
-    .runWith(Sink.foreach(println))
+    logger.info(s"Booting ${BuildInfo.name} version ${BuildInfo.version} with " +
+      s"Scala ${BuildInfo.scalaVersion} and SBT ${BuildInfo.sbtVersion}")
 
-  r.onComplete {
-    case Success(r) =>
-      println(s"Stream completed with ${r}")
-      system.terminate()
-    case Failure(exception) =>
-      System.err.println("💥" * 10)
-      System.err.println(exception)
-      system.terminate()
+    import system.dispatcher
+
+    val sf = Http().newServerAt("0.0.0.0", 7070).bindFlow(Liveness.route)
+
+    val eh = AzureEventBus.trenutneMeritveProducer
+
+    val r = Source.tick(0.seconds, 5.seconds, Model.Tick)
+      .via(HidroPodatki.zadnji)
+      .map(_.asJson)
+      .groupedWithin(100, 100.milliseconds)
+      .map { jsons =>
+        if (config.collecting.trenutneMeritve.enabled) {
+          eh.send(jsons.map(_.noSpaces).map(new EventData(_)).asJava)
+          Map("tm - emitted_in_batch" -> jsons.size)
+        } else
+          Map("tm - collected_in_batch" -> jsons.size)
+      }
+      .runWith(Sink.foreach(println))
+
+    system.registerOnTermination { () =>
+      logger.info("Closing EH")
+      eh.close()
+    }
+
+    sf.onComplete {
+      case Success(_) => logger.info("Server booted,...")
+      case Failure(ex) =>
+        System.err.println(ex)
+        system.terminate()
+    }
+
+    r.onComplete {
+      case Success(r) =>
+        logger.info(s"Stream completed with ${r}")
+        system.terminate()
+      case Failure(exception) =>
+        System.err.println("💥" * 10)
+        System.err.println(exception)
+        system.terminate()
+    }
   }
 }
