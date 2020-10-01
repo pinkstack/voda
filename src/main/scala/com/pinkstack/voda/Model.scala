@@ -15,7 +15,7 @@ object Model {
   type GeSirina = Double
   type Kota = Double
 
-  sealed trait IPostaja extends Product with Serializable {
+  sealed trait IStation extends Product with Serializable {
     def sifra: Sifra
 
     def merilnoMesto: MerilnoMesto
@@ -31,7 +31,7 @@ object Model {
     def kota: Option[Kota]
   }
 
-  sealed trait Meritev {
+  sealed trait Reading {
     def vodostaj: Option[Double]
 
     def pretok: Option[Double]
@@ -39,44 +39,44 @@ object Model {
     def tempVode: Option[Double]
   }
 
-  case class PostajaMeritevTrenutna(sifra: Sifra,
-                                    merilnoMesto: MerilnoMesto,
-                                    reka: Reka,
-                                    imeKratko: String,
-                                    geDolzina: GeDolzina,
-                                    geSirina: GeSirina,
-                                    kota: Option[Kota] = None,
-                                    datum: LocalDateTime,
-                                    vodostaj: Option[Double] = None,
-                                    pretok: Option[Double] = None,
-                                    pretokZnacilni: Option[String] = None,
-                                    tempVode: Option[Double] = None,
-                                    prviVVPretok: Option[Double] = None,
-                                    drugiVVpretok: Option[Double] = None,
-                                    tretjiVVpretok: Option[Double] = None,
-                                    znacilnaVisinaValov: Option[Double] = None,
-                                    smerValovanja: Option[Int] = None
-                                   ) extends IPostaja with Location with Meritev
+  case class StationReadingCurrent(sifra: Sifra,
+                                   merilnoMesto: MerilnoMesto,
+                                   reka: Reka,
+                                   imeKratko: String,
+                                   geDolzina: GeDolzina,
+                                   geSirina: GeSirina,
+                                   kota: Option[Kota] = None,
+                                   datum: LocalDateTime,
+                                   vodostaj: Option[Double] = None,
+                                   pretok: Option[Double] = None,
+                                   pretokZnacilni: Option[String] = None,
+                                   tempVode: Option[Double] = None,
+                                   prviVVPretok: Option[Double] = None,
+                                   drugiVVpretok: Option[Double] = None,
+                                   tretjiVVpretok: Option[Double] = None,
+                                   znacilnaVisinaValov: Option[Double] = None,
+                                   smerValovanja: Option[Int] = None
+                                  ) extends IStation with Location with Reading
 
-  case class PostajaMeritevZgodovinska(sifra: Sifra,
-                                       merilnoMesto: MerilnoMesto,
-                                       reka: Reka,
-                                       imeKratko: String,
-                                       geDolzina: GeDolzina,
-                                       geSirina: GeSirina,
-                                       kota: Option[Kota] = None,
-                                       datum: LocalDate,
-                                       vodostaj: Option[Double] = None,
-                                       pretok: Option[Double] = None,
-                                       tempVode: Option[Double] = None
-                                      ) extends IPostaja with Meritev with Location
+  case class StationReadingHistorical(sifra: Sifra,
+                                      merilnoMesto: MerilnoMesto,
+                                      reka: Reka,
+                                      imeKratko: String,
+                                      geDolzina: GeDolzina,
+                                      geSirina: GeSirina,
+                                      kota: Option[Kota] = None,
+                                      datum: LocalDate,
+                                      vodostaj: Option[Double] = None,
+                                      pretok: Option[Double] = None,
+                                      tempVode: Option[Double] = None
+                                     ) extends IStation with Reading with Location
 
-  case class Postaja(sifra: Sifra,
+  case class Station(sifra: Sifra,
                      merilnoMesto: MerilnoMesto,
                      reka: Reka,
                      imeKratko: String,
                      geDolzina: Double,
                      geSirina: Double,
-                     kota: Option[Kota] = None) extends IPostaja with Location
+                     kota: Option[Kota] = None) extends IStation with Location
 
 }

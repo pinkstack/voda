@@ -13,8 +13,8 @@ import cats.implicits._
 
 import scala.concurrent.duration._
 import com.azure.messaging.eventhubs.{EventData, EventHubProducerClient}
-import com.pinkstack.voda.Configuration.TrenutneMeritve
-import com.pinkstack.voda.Model.{PostajaMeritevTrenutna, PostajaMeritevZgodovinska}
+import com.pinkstack.voda.Configuration.CurrentMeasurements
+import com.pinkstack.voda.Model.{StationReadingCurrent, StationReadingHistorical}
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 
@@ -28,8 +28,8 @@ object ProducerApp {
   import io.circe.Decoder, io.circe.generic.semiauto.deriveDecoder
   import io.circe.Encoder, io.circe.generic.semiauto.deriveEncoder
 
-  implicit val trenutnaEncoder: Encoder[Model.PostajaMeritevTrenutna] = deriveEncoder[Model.PostajaMeritevTrenutna]
-  implicit val arhivskaEncoder: Encoder[Model.PostajaMeritevZgodovinska] = deriveEncoder[Model.PostajaMeritevZgodovinska]
+  implicit val trenutnaEncoder: Encoder[Model.StationReadingCurrent] = deriveEncoder[Model.StationReadingCurrent]
+  implicit val arhivskaEncoder: Encoder[Model.StationReadingHistorical] = deriveEncoder[Model.StationReadingHistorical]
 
   def fakeApp[T](eb: EventHubProducerClient)
                 (fakeMethod: Configuration.Config => Seq[T])
@@ -41,8 +41,8 @@ object ProducerApp {
       .map { _ => Source(fakeMethod(config)) }
       .flatMapConcat(identity)
       .map {
-        case (p: Model.PostajaMeritevZgodovinska) => p.asJson.noSpaces
-        case (p: Model.PostajaMeritevTrenutna) => p.asJson.noSpaces
+        case (p: Model.StationReadingHistorical) => p.asJson.noSpaces
+        case (p: Model.StationReadingCurrent) => p.asJson.noSpaces
       }
       .map { jsonString: String =>
         eb.send(Seq(new EventData(jsonString)).asJava)
@@ -64,17 +64,17 @@ object ProducerApp {
   }
 
   def fakeTrenutneMeritve(implicit system: ActorSystem, configuration: Configuration.Config) = {
-    fakeApp[Model.PostajaMeritevTrenutna](AzureEventBus.trenutneMeritveProducer)(buildFakeTrenutneMeritve)
+    fakeApp[Model.StationReadingCurrent](AzureEventBus.currentMeasurementsProducer)(buildFakeTrenutneMeritve)
   }
 
   def fakeArhivskeMeritve(implicit system: ActorSystem, configuration: Configuration.Config) = {
-    fakeApp[Model.PostajaMeritevZgodovinska](AzureEventBus.arhivskeMeritveProducer)(buildFakeArhivskeMeritve)
+    fakeApp[Model.StationReadingHistorical](AzureEventBus.historicalMeasurementsProducer)(buildFakeArhivskeMeritve)
   }
 
-  val buildFakeTrenutneMeritve: Configuration.Config => Seq[Model.PostajaMeritevTrenutna] = { configuration =>
+  val buildFakeTrenutneMeritve: Configuration.Config => Seq[Model.StationReadingCurrent] = { configuration =>
     Seq({
       val p = configuration.stations.get("5030").get
-      PostajaMeritevTrenutna(
+      StationReadingCurrent(
         p.sifra,
         p.reka,
         p.merilnoMesto,
@@ -90,7 +90,7 @@ object ProducerApp {
     },
       {
         val p = configuration.stations.get("5040").get
-        PostajaMeritevTrenutna(
+        StationReadingCurrent(
           p.sifra,
           p.reka,
           p.merilnoMesto,
@@ -103,7 +103,7 @@ object ProducerApp {
       },
       {
         val p = configuration.stations.get("5078").get
-        PostajaMeritevTrenutna(
+        StationReadingCurrent(
           p.sifra,
           p.reka,
           p.merilnoMesto,
@@ -120,10 +120,10 @@ object ProducerApp {
     )
   }
 
-  val buildFakeArhivskeMeritve: Configuration.Config => Seq[Model.PostajaMeritevZgodovinska] = { configuration =>
+  val buildFakeArhivskeMeritve: Configuration.Config => Seq[Model.StationReadingHistorical] = { configuration =>
     Seq({
       val p = configuration.stations.get("5030").get
-      PostajaMeritevZgodovinska(
+      StationReadingHistorical(
         p.sifra,
         p.reka,
         p.merilnoMesto,
@@ -139,7 +139,7 @@ object ProducerApp {
     },
       {
         val p = configuration.stations.get("5040").get
-        PostajaMeritevZgodovinska(
+        StationReadingHistorical(
           p.sifra,
           p.reka,
           p.merilnoMesto,
@@ -152,7 +152,7 @@ object ProducerApp {
       },
       {
         val p = configuration.stations.get("5078").get
-        PostajaMeritevZgodovinska(
+        StationReadingHistorical(
           p.sifra,
           p.reka,
           p.merilnoMesto,

@@ -14,7 +14,7 @@ import akka.stream.ThrottleMode
 import akka.stream.scaladsl._
 import com.azure.messaging.eventhubs.EventData
 import com.pinkstack.voda.Configuration._
-import com.pinkstack.voda.Model.{Postaja, PostajaMeritevZgodovinska}
+import com.pinkstack.voda.Model.{Station, StationReadingHistorical}
 import com.typesafe.scalalogging.LazyLogging
 import kantan.csv._
 import kantan.csv.ops._
@@ -22,64 +22,57 @@ import kantan.csv.ops._
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
-object VodaArchive {
-  implicit val urlToURI: URL => Uri = (url: URL) => Uri(url.toString)
+object VodaArchive extends LazyLogging {
 
-  def stationsSource(implicit config: Config): Source[Postaja, NotUsed] = {
-    Source(config.stations.map(_._2))
+  case class CSVRow(datum: String, vodostaj: Option[Double], pretok: Option[Double], temperature: Option[Double])
+
+  implicit val urlToURI: URL => Uri = (url: URL) => Uri(url.toString)
+  implicit val stringToLocalDate: String => LocalDate = LocalDate.parse(_, DateTimeFormatter.ofPattern("dd.MM.yyyy"))
+  implicit val rowDecoder: RowDecoder[CSVRow] = RowDecoder.ordered {
+    (datum: String, vodostaj: Option[Double], pretok: Option[Double], tempVode: Option[Double]) =>
+      CSVRow(datum, vodostaj, pretok, tempVode)
   }
 
-  def buildRequests(implicit system: ActorSystem, config: Config): Flow[Postaja, (HttpRequest, Postaja), NotUsed] = {
-    def from(year: Int)(postaja: Postaja): HttpRequest =
-      HttpRequest(uri = Uri(config.hidroPodatki.arhivURL.toString)
+  def stationsSource(implicit config: Config): Source[Station, NotUsed] =
+    Source(config.stations.map(_._2))
+
+  def buildRequests(implicit system: ActorSystem, config: Config): Flow[Station, (HttpRequest, Station), NotUsed] = {
+    def from(year: Int)(station: Station): HttpRequest =
+      HttpRequest(uri = Uri(config.hydroData.historicalURL.toString)
         .withQuery(Query(Map(
           "b_arhiv" -> "Prikaži",
           "p_export" -> "txt",
-          "p_vodotok" -> postaja.reka,
-          "p_postaja" -> postaja.sifra,
+          "p_vodotok" -> station.reka,
+          "p_postaja" -> station.sifra,
           "p_leto" -> year.toString))))
 
-    //FlowWithContext[Postaja, Postaja].map { postaja =>
-    Flow[Postaja].map { case (postaja: Postaja) =>
+    Flow[Station].map { station =>
       val (startYear: Int, stopYear: Int) = (Year.now.getValue - 20 - 3, Year.now.getValue - 2)
-      Range(startYear, stopYear).map(from(_)(postaja)).map(request => (request, postaja))
+      Range(startYear, stopYear).map(from(_)(station)).map(request => (request, station))
     }.mapConcat(identity)
   }
 
-  def collectMetrics(implicit system: ActorSystem, config: Config): Flow[Postaja, PostajaMeritevZgodovinska, NotUsed] = {
+  def collectMetrics(implicit system: ActorSystem, config: Config): Flow[Station, StationReadingHistorical, NotUsed] = {
     import system.dispatcher
-
-    case class Row(datum: String, vodostaj: Option[Double], pretok: Option[Double], temperature: Option[Double])
-    implicit val rowDecoder: RowDecoder[Row] = RowDecoder.ordered {
-      (datum: String,
-       vodostaj: Option[Double],
-       pretok: Option[Double],
-       tempVode: Option[Double]
-      ) =>
-        Row(datum, vodostaj, pretok, tempVode)
-    }
-
-    def parseCSV(raw: String)(request: HttpRequest) = {
-      val r = raw.asCsvReader[Row](rfc.withCellSeparator(';').withHeader).map(_.toOption).toList
-      if (r.isEmpty) System.err.println(s"Failed at ${request.uri.toString}")
+    def parseCSV(raw: String)(request: HttpRequest): List[Option[CSVRow]] = {
+      val r = raw.asCsvReader[CSVRow](rfc.withCellSeparator(';').withHeader).map(_.toOption).toList
+      if (r.isEmpty) logger.error(s"Failed at ${request.uri.toString}")
       r
     }
 
-    def rowWithPostaja(r: Row)(p: Postaja): PostajaMeritevZgodovinska = {
-      implicit val stringToLocalDate: String => LocalDate = LocalDate.parse(_, DateTimeFormatter.ofPattern("dd.MM.yyyy"))
-
-      PostajaMeritevZgodovinska(
+    def concat(r: CSVRow)(p: Station): StationReadingHistorical = {
+      StationReadingHistorical(
         p.sifra, p.merilnoMesto, p.reka, p.imeKratko, p.geDolzina, p.geSirina, p.kota,
         r.datum, r.vodostaj, r.pretok, r.temperature)
     }
 
     VodaArchive.buildRequests
-      .throttle(20, 1.second, 40, ThrottleMode.Shaping)
+      .throttle(60, 1.second, 40, ThrottleMode.Shaping)
       .mapAsync(4) { case (r, ctx) =>
         Http().singleRequest(r)
           .flatMap(response => Unmarshal(response).to[String])
           .map(body => parseCSV(body)(r))
-          .map(_.map(_.map(rowWithPostaja(_)(ctx))))
+          .map(_.map(_.map(concat(_)(ctx))))
       }
       .filterNot(_.isEmpty)
       .mapConcat(identity)
@@ -90,36 +83,37 @@ object VodaArchive {
 
 object ArchiveMain extends LazyLogging {
 
-  import scala.jdk.CollectionConverters._
   import io.circe.generic.auto._, io.circe.syntax._
 
-  def main(args: Array[String] = Array.empty): Unit = {
+  private[this] def shouldEmit[A, B](yes: Seq[StationReadingHistorical] => A)
+                                    (no: Seq[StationReadingHistorical] => B)
+                                    (measurements: Seq[StationReadingHistorical])
+                                    (implicit config: Configuration.Config): Any =
+    Option.when(config.collecting.historicalMeasurements.enabled)(yes).getOrElse(no)(measurements)
 
+  def main(args: Array[String] = Array.empty): Unit = {
     implicit val system: ActorSystem = ActorSystem("voda-arhiv")
     implicit val config: Config = Configuration.load
 
     import system.dispatcher
 
-    val eh = AzureEventBus.arhivskeMeritveProducer
+    val hub = AzureEventBus.historicalMeasurementsProducer
+
+    implicit val toEventData: StationReadingHistorical => EventData = m => new EventData(m.asJson.noSpaces)
 
     val f = VodaArchive.stationsSource
-      // .take(1)
       .via(VodaArchive.collectMetrics)
-      .map(_.asJson)
-      .groupedWithin(1000, 300.milliseconds)
-      .map { jsons =>
-        if (config.collecting.arhivskeMeritve.enabled) {
-          eh.send(jsons.map(_.noSpaces).map(new EventData(_)).asJava)
-          Map("tm - emitted_in_batch" -> jsons.size)
-        } else
-          Map("tm - collected_in_batch" -> jsons.size)
-      }
-      .runWith(Sink.foreach(println))
+      .groupedWithin(5000, 1.second)
+      .map(shouldEmit(measurements => {
+        hub.send(measurements.foldLeft(hub.createBatch()) { (batch, m) =>
+          batch.tryAdd(m)
+          batch
+        })
+        logger.info(s"Collected and emitted ${measurements.size} historical measurements.")
+      })(jsons => jsons.map(_.asJson).foreach(println)))
+      .runWith(Sink.ignore)
 
-    system.registerOnTermination { () =>
-      logger.info("Closing EH")
-      eh.close()
-    }
+    system.registerOnTermination { () => hub.close() }
 
     f.onComplete {
       case Success(_) =>

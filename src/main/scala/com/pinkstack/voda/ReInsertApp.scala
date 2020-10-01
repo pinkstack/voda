@@ -12,7 +12,7 @@ object ReInsertApp extends LazyLogging {
     implicit val system: ActorSystem = ActorSystem("re-insert")
     implicit val config: Config = Configuration.load
 
-    lazy val eb = AzureEventBus.arhivskeMeritveConsumer(eventContext => {
+    lazy val eb = AzureEventBus.historicalMeasurementsConsumer(eventContext => {
       val body: String = eventContext.getEventData.getBodyAsString
       println(body)
     })(errorContext => {

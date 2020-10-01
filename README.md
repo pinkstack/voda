@@ -61,6 +61,21 @@ sbt docker:publish
 helm upgrade one chart/voda -f chart/voda/values.yaml --set image.tag=0.1.1
 ```
 
+## Queries
+
+```SQL
+SELECT
+    *,
+    DATEPART (year, stream.datum) as c_year,
+    DATEPART (dayofyear, stream.datum) as c_dayofyear,
+    DATEPART (quarter, stream.datum) as c_quarter,
+    CreatePoint(stream.geSirina, stream.geDolzina) as location
+INTO
+    [historical-measurements]
+FROM
+    [eh-archive] AS stream
+```
+
 ## Usage with Docker
 
 ```bash

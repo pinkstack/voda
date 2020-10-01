@@ -9,17 +9,17 @@ import pureconfig.ConfigReader.Result
 
 object Configuration {
 
-  case class HidroPodatki(zadnjiURL: URL, dnevniURL: URL, arhivURL: URL)
+  case class HydroData(currentURL: URL, historicalURL: URL)
 
-  case class TrenutneMeritve(enabled: Boolean, connectionString: String)
+  case class CurrentMeasurements(enabled: Boolean, connectionString: String)
 
-  case class ArhivskeMeritve(enabled: Boolean, connectionString: String)
+  case class HistoricalMeasurements(enabled: Boolean, connectionString: String)
 
-  case class Collecting(trenutneMeritve: TrenutneMeritve,
-                        arhivskeMeritve: ArhivskeMeritve)
+  case class Collecting(currentMeasurements: CurrentMeasurements,
+                        historicalMeasurements: HistoricalMeasurements)
 
-  case class Config(hidroPodatki: HidroPodatki,
-                    stations: scala.collection.immutable.Map[String, Model.Postaja],
+  case class Config(hydroData: HydroData,
+                    stations: scala.collection.immutable.Map[String, Model.Station],
                     collecting: Collecting
                    )
 
