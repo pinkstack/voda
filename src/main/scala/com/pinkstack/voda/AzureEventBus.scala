@@ -21,11 +21,12 @@ object AzureEventBus {
       .connectionString(config.collecting.historicalMeasurements.connectionString)
       .buildProducerClient()
 
+  // Experimental part for consumption of Events
   def historicalMeasurementsConsumer(eventProcessor: Consumer[EventContext])
                                     (errorProcessor: Consumer[ErrorContext])
                                     (implicit config: Configuration.Config): EventProcessorClient = {
     val (blobConnectionString, blobContainerName) = (
-      "DefaultEndpointsProtocol=https;AccountName=vodatsi;AccountKey=hgjuHbRWx+psPJ9cUA3179AhP2Rt2s/SYz+qg90DPWd33MpISgFm8SDU3LSvMNjVGczMtzpfKn8oBfH6m9lvhg==;EndpointSuffix=core.windows.net",
+      "DefaultEndpointsProtocol=..... (deleted)",
       "env-1e827db3-5a1c-4e6e-a725-0c6c5eecb82f"
     )
 
