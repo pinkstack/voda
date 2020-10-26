@@ -31,7 +31,8 @@ object HydroData extends ScalaXmlSupport {
   implicit val urlToURI: URL => Uri = (url: URL) => Uri(url.toString)
 
   private[this] def flow(url: URL)
-                        (implicit system: ActorSystem, config: Configuration.Config): Flow[Tick, StationReadingCurrent, NotUsed] = {
+                        (implicit system: ActorSystem,
+                         config: Configuration.Config): Flow[Tick, StationReadingCurrent, NotUsed] = {
     import system.dispatcher
 
     implicit val stringToLocalDateTime: String => LocalDateTime =
@@ -60,28 +61,31 @@ object HydroData extends ScalaXmlSupport {
         )
       }
 
-    val fetch: Future[Seq[StationReadingCurrent]] =
+    def fetch: Future[Source[StationReadingCurrent, NotUsed]] =
       Http().singleRequest(HttpRequest(uri = url))
         .flatMap(r => Unmarshal(r).to[NodeSeq])
         .map(toStationSeq)
+        .map(Source(_))
 
     RestartFlow.onFailuresWithBackoff(5.seconds, 30.seconds, 0.3, 10) { () =>
       Flow[Model.Tick]
         .mapAsyncUnordered(1)(_ => fetch)
-        .mapConcat(identity)
+        .flatMapConcat(identity)
     }
   }
 
-  def currentFlow(implicit system: ActorSystem, config: Configuration.Config): Flow[Tick, StationReadingCurrent, NotUsed] =
+  def currentFlow(implicit system: ActorSystem,
+                  config: Configuration.Config): Flow[Tick, StationReadingCurrent, NotUsed] =
     flow(config.hydroData.currentURL)
 }
 
 object Liveness {
-  def route(implicit system: ActorSystem): RequestContext => Future[RouteResult] = {
-    import akka.http.scaladsl.server.Directives._
-    import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
+
+  import akka.http.scaladsl.server.Directives._
+  import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
+
+  def route(implicit system: ActorSystem): RequestContext => Future[RouteResult] =
     pathSingleSlash(get(complete(Map("status" -> "ok"))))
-  }
 }
 
 object FetchMain extends LazyLogging {
@@ -100,14 +104,14 @@ object FetchMain extends LazyLogging {
     import system.dispatcher
     implicit val config: Configuration.Config = Configuration.load
 
-    logger.info(s"Version: ${BuildInfo.version} Scala: ${BuildInfo.scalaVersion} SBT: ${BuildInfo.sbtVersion}")
+    logger.info(s"🚀 Version: ${BuildInfo.version} Scala: ${BuildInfo.scalaVersion} SBT: ${BuildInfo.sbtVersion} 🚀")
 
-    val sf = Http().newServerAt("0.0.0.0", 7070).bindFlow(Liveness.route)
+    val liveness = Http().newServerAt("0.0.0.0", 7070).bindFlow(Liveness.route)
     val hub = AzureEventBus.currentMeasurementsProducer
 
     implicit val toEventData: StationReadingCurrent => EventData = m => new EventData(m.asJson.noSpaces)
 
-    val r = Source.tick(0.seconds, 5.seconds, Model.Tick)
+    val collection = Source.tick(0.seconds, 5.seconds, Model.Tick)
       .via(HydroData.currentFlow)
       .groupedWithin(100, 100.milliseconds)
       .map(shouldEmit(measurements => {
@@ -128,7 +132,7 @@ object FetchMain extends LazyLogging {
     }
 
     system.registerOnTermination { () => hub.close() }
-    sf.onComplete(logAttempt andThen (_ => logger.info(s"Server booted on http://0.0.0.0:7070/")))
-    r.onComplete(logAttempt andThen (_ => system.terminate()))
+    liveness.onComplete(logAttempt andThen (_ => logger.info(s"Server booted on http://0.0.0.0:7070/")))
+    collection.onComplete(logAttempt andThen (_ => system.terminate()))
   }
 }

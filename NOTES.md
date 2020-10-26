@@ -63,6 +63,10 @@ kubectl create secret docker-registry acr-secret \
   --docker-username=vodacr \
   --docker-password="eBFXiJZ4n=XBe/GrZHLuesCTN0cHSmdg"
 
+kubectl create secret docker-registry acr-secret \
+  --docker-server=vodacr.azurecr.io \
+  --docker-username=vodacr \
+  --docker-password="oQx0xOlm2oa=TcF9tLHmadaq7iMyA8/Z"
   
 ### Deploy dlow
 

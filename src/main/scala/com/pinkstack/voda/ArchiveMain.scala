@@ -27,7 +27,8 @@ object VodaArchive extends LazyLogging {
   case class CSVRow(datum: String, vodostaj: Option[Double], pretok: Option[Double], temperature: Option[Double])
 
   implicit val urlToURI: URL => Uri = (url: URL) => Uri(url.toString)
-  implicit val stringToLocalDate: String => LocalDate = LocalDate.parse(_, DateTimeFormatter.ofPattern("dd.MM.yyyy"))
+  implicit val stringToLocalDate: String => LocalDate =
+    LocalDate.parse(_, DateTimeFormatter.ofPattern("dd.MM.yyyy"))
   implicit val rowDecoder: RowDecoder[CSVRow] = RowDecoder.ordered {
     (datum: String, vodostaj: Option[Double], pretok: Option[Double], tempVode: Option[Double]) =>
       CSVRow(datum, vodostaj, pretok, tempVode)
